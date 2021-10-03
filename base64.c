@@ -1,53 +1,54 @@
 #include <stdio.h>
-#include <stdlib.h>
-#define SIZE 68
-
-static char encoding_table[] = {'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H',
-                                'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P',
-                                'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X',
-                                'Y', 'Z', 'a', 'b', 'c', 'd', 'e', 'f',
-                                'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n',
-                                'o', 'p', 'q', 'r', 's', 't', 'u', 'v',
-                                'w', 'x', 'y', 'z', '0', '1', '2', '3',
-                                '4', '5', '6', '7', '8', '9', '+', '/'};
-
-static int mod_table[] = {0, 2, 1};
+#include <string.h>
  
-char *base64_encode(const unsigned char *data,
-                    size_t input_length,
-                    size_t *output_length) {
+#define SIZE 5
  
-    *output_length = 4 * ((input_length + 2) / 3);
+char basis_64[] =
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
  
-    char *encoded_data = malloc(*output_length);
-    if (encoded_data == NULL) return NULL;
+int Base64encode_len(int len) {
+    return ((len + 2) / 3 * 4) + 1;
+}
  
-    for (int i = 0, j = 0; i < input_length;) {
+int Base64encode(char *encoded, const char *string, int len) {
+    int i;
+    char *p;
  
-        long octet_a = i < input_length ? (unsigned char)data[i++] : 0;
-        long octet_b = i < input_length ? (unsigned char)data[i++] : 0;
-        long octet_c = i < input_length ? (unsigned char)data[i++] : 0;
- 
-        long triple = (octet_a << 0x10) + (octet_b << 0x08) + octet_c;
- 
-        encoded_data[j++] = encoding_table[(triple >> 3 * 6) & 0x3F];
-        encoded_data[j++] = encoding_table[(triple >> 2 * 6) & 0x3F];
-        encoded_data[j++] = encoding_table[(triple >> 1 * 6) & 0x3F];
-        encoded_data[j++] = encoding_table[(triple >> 0 * 6) & 0x3F];
+    p = encoded;
+    for (i = 0; i < len - 2; i += 3) {
+    *p++ = basis_64[(string[i] >> 2) & 0x3F];
+    *p++ = basis_64[((string[i] & 0x3) << 4) |
+                    ((int) (string[i + 1] & 0xF0) >> 4)];
+    *p++ = basis_64[((string[i + 1] & 0xF) << 2) |
+                    ((int) (string[i + 2] & 0xC0) >> 6)];
+    *p++ = basis_64[string[i + 2] & 0x3F];
+    }
+    if (i < len) {
+    *p++ = basis_64[(string[i] >> 2) & 0x3F];
+    if (i == (len - 1)) {
+        *p++ = basis_64[((string[i] & 0x3) << 4)];
+        *p++ = '=';
+    }
+    else {
+        *p++ = basis_64[((string[i] & 0x3) << 4) |
+                        ((int) (string[i + 1] & 0xF0) >> 4)];
+        *p++ = basis_64[((string[i + 1] & 0xF) << 2)];
+    }
+    *p++ = '=';
     }
  
-    for (int i = 0; i < mod_table[input_length % 3]; i++)
-        encoded_data[*output_length - 1 - i] = '=';
- 
-    return encoded_data;
+    *p++ = '\0';
+    return p - encoded;
 }
  
 int main(){
-    
-    char data[] = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed congue.";
-    long input_size = SIZE;
-    char * encoded_data = base64_encode(data, input_size, &input_size);
-    printf("Encoded Data is: %s \n",encoded_data);
-    
+ 
+    char text[] = "Base64";
+    char result[32];
+ 
+    Base64encode(result, text, 6);
+ 
+    printf("\n%s\n", result);
+ 
     return 0;
 }
